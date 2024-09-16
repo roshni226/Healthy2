@@ -1,0 +1,39 @@
+// app.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const PORT = 3000;
+
+// Middleware to parse form data
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve the HTML form
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Handle form submission
+app.post('/submit', (req, res) => {
+    const { firstName, lastName, email, age } = req.body;
+    
+    // Format data as CSV
+    const data = `${firstName},${lastName},${email},${age}\n`;
+
+    // Save data to a file (data.csv)
+    fs.appendFile('data.csv', data, (err) => {
+        if (err) {
+            console.error('Error writing to file', err);
+            res.status(500).send('Server error. Unable to save data.');
+        } else {
+            res.send('Data saved successfully!');
+        }
+    });
+});
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
