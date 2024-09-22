@@ -1,59 +1,51 @@
-// app.js
 const express = require('express');
+const mysql = require('mysql2');
 const bodyParser = require('body-parser');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware to parse form data
+// Middleware
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public')); // Serve static files from the 'public' directory
 
-// Set storage engine for multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/'); // The folder where files will be stored
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname); // Append timestamp to file name to make it unique
+// MySQL connection
+const db = mysql.createConnection({
+    host: 'healthy-db.cfdovopsmgxy.ap-south-1.rds.amazonaws.com',
+    user: 'admin',
+    password: 'edcrfvtgb123',
+    database: 'doctor_appointment',
+});
+
+// Connect to the database
+db.connect((err) => {
+    if (err) {
+        console.error('Database connection failed:', err);
+        return;
     }
+    console.log('Connected to the database.');
 });
 
-// Initialize multer for file uploads
-const upload = multer({ storage: storage });
+// Route to add client
+app.post('/add-client', (req, res) => {
+    const { first_name, last_name, contact_number, email, age } = req.body;
 
-// Serve the HTML form
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+    const sql = 'INSERT INTO clients (first_name, last_name, contact_number, email, age) VALUES (?, ?, ?, ?, ?)';
+    const values = [first_name, last_name, contact_number, email, age];
 
-// Handle form submission, including file upload
-app.post('/submit', upload.single('recordFile'), (req, res) => {
-    const { firstName, lastName, email, age } = req.body;
-    const file = req.file;
-
-    // Format data as CSV
-    const data = `${firstName},${lastName},${email},${age},${file.path}\n`;
-
-    // Save data to a CSV file
-    fs.appendFile('data.csv', data, (err) => {
-        if (err) {
-            console.error('Error writing to file', err);
-            res.status(500).send('Server error. Unable to save data.');
-        } else {
-            res.send('Data and file saved successfully!');
+    db.query(sql, values, (error, results) => {
+        if (error) {
+            console.error('Error inserting client:', error);
+            return res.status(500).send('Error adding client');
         }
+        res.status(200).send('Client added successfully');
     });
 });
 
-// Create the 'uploads' directory if it doesn't exist
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
-}
-
 // Start the server
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on http://0.0.0.0:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
+
+app.use(express.static('public')); // Serve static files from the 'public' directory

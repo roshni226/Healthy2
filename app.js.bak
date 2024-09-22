@@ -1,39 +1,49 @@
-// app.js
 const express = require('express');
+const mysql = require('mysql2');
 const bodyParser = require('body-parser');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware to parse form data
+// Middleware
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public')); // Serve static files from the 'public' directory
 
-// Serve the HTML form
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// MySQL connection
+const db = mysql.createConnection({
+    host: 'healthy-db.cfdovopsmgxy.ap-south-1.rds.amazonaws.com',
+    user: 'admin',
+    password: 'edcrfvtgb123',
+    database: 'doctor_appointment',
 });
 
-// Handle form submission
-app.post('/submit', (req, res) => {
-    const { firstName, lastName, email, age } = req.body;
-    
-    // Format data as CSV
-    const data = `${firstName},${lastName},${email},${age}\n`;
+// Connect to the database
+db.connect((err) => {
+    if (err) {
+        console.error('Database connection failed:', err);
+        return;
+    }
+    console.log('Connected to the database.');
+});
 
-    // Save data to a file (data.csv)
-    fs.appendFile('data.csv', data, (err) => {
-        if (err) {
-            console.error('Error writing to file', err);
-            res.status(500).send('Server error. Unable to save data.');
-        } else {
-            res.send('Data saved successfully!');
+// Route to add client
+app.post('/add-client', (req, res) => {
+    const { first_name, last_name, contact_number, email, age } = req.body;
+
+    const sql = 'INSERT INTO clients (first_name, last_name, contact_number, email, age) VALUES (?, ?, ?, ?, ?)';
+    const values = [first_name, last_name, contact_number, email, age];
+
+    db.query(sql, values, (error, results) => {
+        if (error) {
+            console.error('Error inserting client:', error);
+            return res.status(500).send('Error adding client');
         }
+        res.status(200).send('Client added successfully');
     });
 });
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
