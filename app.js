@@ -15,7 +15,7 @@ const db = mysql.createConnection({
     host: 'healthy-db.cfdovopsmgxy.ap-south-1.rds.amazonaws.com',
     user: 'admin',
     password: 'edcrfvtgb123',
-    database: 'doctors_appointment',
+    database: 'doctor_appointment',
 });
 
 // Connect to the database
