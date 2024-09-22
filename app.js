@@ -13,8 +13,8 @@ app.use(express.static('public')); // Serve static files from the 'public' direc
 // MySQL connection
 const db = mysql.createConnection({
     host: 'healthy-db.cfdovopsmgxy.ap-south-1.rds.amazonaws.com',
-    user: '<your-username>',
-    password: '<your-password>',
+    user: 'admin',
+    password: 'edcrfvtgb123',
     database: 'patient_records',
 });
 
