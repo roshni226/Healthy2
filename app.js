@@ -13,9 +13,9 @@ app.use(express.static('public')); // Serve static files from the 'public' direc
 // MySQL connection
 const db = mysql.createConnection({
     host: 'healthy-db.cfdovopsmgxy.ap-south-1.rds.amazonaws.com',
-    user: 'admin',
-    password: 'edcrfvtgb123',
-    database: 'doctor_appointment',
+    user: '<your-username>',
+    password: '<your-password>',
+    database: 'patient_records',
 });
 
 // Connect to the database
@@ -44,8 +44,9 @@ app.post('/add-client', (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
 
 app.use(express.static('public')); // Serve static files from the 'public' directory
