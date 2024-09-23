@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <h1>Patient Record Form</h1>
-        <form id="patient-form">
+        <form id="patient-form" action="/add-client" method="POST">
             <label for="first_name">First Name:</label>
             <input type="text" id="first_name" name="first_name" required>
 

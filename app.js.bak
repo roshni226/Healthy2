@@ -1,9 +1,36 @@
 const express = require('express');
-const mysql = require('mysql2');
+const app = express();
+const AWS = require('aws-sdk');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
 const bodyParser = require('body-parser');
+const mysql = require('mysql2');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+
+// S3 Configuration
+AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Set in your environment variables
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: 'ap-south-1', // Replace with your region
+});
+
+
+const s3 = new AWS.S3();
+
+// Multer S3 setup
+const upload = multer({
+    storage: multerS3({
+        s3: s3,
+        bucket: 'your-s3-bucket-name',
+        key: function (req, file, cb) {
+            cb(null, Date.now().toString() + '-' + file.originalname); // file name will be unique
+        }
+    })
+});
+
 
 // Middleware
 app.use(bodyParser.json());
@@ -15,7 +42,7 @@ const db = mysql.createConnection({
     host: 'healthy-db.cfdovopsmgxy.ap-south-1.rds.amazonaws.com',
     user: 'admin',
     password: 'edcrfvtgb123',
-    database: 'doctors_appointment',
+    database: 'doctor_appointment',
 });
 
 // Connect to the database
@@ -28,9 +55,10 @@ db.connect((err) => {
 });
 
 // Route to add client
-app.post('/add-client', (req, res) => {
+app.post('/add-client', upload.single('file'), (req, res) => {
     const { first_name, last_name, contact_number, email, age } = req.body;
-
+	const file = req.file;
+	
     const sql = 'INSERT INTO clients (first_name, last_name, contact_number, email, age) VALUES (?, ?, ?, ?, ?)';
     const values = [first_name, last_name, contact_number, email, age];
 
@@ -39,8 +67,19 @@ app.post('/add-client', (req, res) => {
             console.error('Error inserting client:', error);
             return res.status(500).send('Error adding client');
         }
-        res.status(200).send('Client added successfully');
+
+        // Now, file is uploaded to S3
+        const fileUrl = file.location; // URL of the file in S3
+
+        res.send(`
+            <p>Patient record added successfully!</p>
+            <p>File uploaded to S3: <a href="${fileUrl}" target="_blank">View File</a></p>
+            <img src="${fileUrl}" style="max-width: 100%; height: auto;" />
+            <a href="/index.html">Go back to form</a>
+        `);
+       
     });
+	
 });
 
 // Start the server
