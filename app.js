@@ -75,34 +75,36 @@ const uploadFileToS3 = async (file) => {
 
 
 // Route to add client
-app.post('/add-client', upload.single('file'), (req, res) => {
-    const { first_name, last_name, contact_number, email, age } = req.body;
-	const file = req.file;
-	
-    const sql = 'INSERT INTO clients (first_name, last_name, contact_number, email, age) VALUES (?, ?, ?, ?, ?)';
-    const values = [first_name, last_name, contact_number, email, age];
+app.post('/add-client', upload.single('file'), async (req, res) => {
+    try {
+        const { first_name, last_name, contact_number, email, age } = req.body;
+        const file = req.file;
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            console.error('Error inserting client:', error);
-            return res.status(500).send('Error adding client');
-        }
+        const sql = 'INSERT INTO clients (first_name, last_name, contact_number, email, age) VALUES (?, ?, ?, ?, ?)';
+        const values = [first_name, last_name, contact_number, email, age];
 
-        try {
-            // Upload the file to S3
-            const fileUrl = await uploadFileToS3(file);
+        // Insert client details into MySQL database
+        db.query(sql, values, async (error, results) => {
+            if (error) {
+                console.error('Error inserting client:', error);
+                return res.status(500).send('Error adding client');
+            }
 
+            // Upload file to S3
+            const fileUrl = await uploadFileToS3(file); // Ensure uploadFileToS3 is an async function
+            
+            // Respond with the client data and file URL
             res.send(`
                 <p>Patient record added successfully!</p>
                 <p>File uploaded to S3: <a href="${fileUrl}" target="_blank">View File</a></p>
                 <img src="${fileUrl}" style="max-width: 100%; height: auto;" />
                 <a href="/index.html">Go back to form</a>
             `);
-        } catch (err) {
-            res.status(500).send('Error uploading file to S3');
-        }       
-    });
-	
+        });
+    } catch (err) {
+        console.error('Error handling /add-client:', err);
+        res.status(500).send('An error occurred');
+    }
 });
 
 // Start the server
